@@ -3,5 +3,6 @@ members = [
     "core",
     "crypto",
     "executor",
+    "stream",
     "tests"
 ]

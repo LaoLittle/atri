@@ -5,8 +5,17 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+tokio = ["atri_executor/tokio"]
+async-std = ["atri_executor/async-std"]
+blocking = ["atri_executor/blocking"]
+thread-pool = ["atri_executor/thread-pool"]
+
 [dependencies]
 dashmap = "5"
+futures-io = "0"
+futures-core = "0"
+futures-sink = "0"
 
 [dependencies.futures-channel]
 version = "0"
@@ -14,6 +23,14 @@ features = ["std"]
 
 [dependencies.futures-util]
 version = "0"
+
+[target."cfg(features = \"tokio\")".dependencies.tokio]
+version = "1"
+features = ["io-util"]
+
+[dependencies.tokio-util]
+version = "0"
+features = ["codec"]
 
 [dependencies.atri_crypto]
 path = "../crypto"

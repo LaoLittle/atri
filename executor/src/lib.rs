@@ -32,7 +32,7 @@ impl<E: Executor> Executor for std::sync::Arc<E> {
     }
 }
 
-impl<E: Executor> Executor for &'static E {
+impl<E: Executor> Executor for &E {
     fn spawn<F>(&self, fu: F)
     where
         F: Future + Send,
