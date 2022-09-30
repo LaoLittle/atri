@@ -1,0 +1,23 @@
+[package]
+name = "atri_core"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dashmap = "5"
+
+[dependencies.futures-channel]
+version = "0"
+features = ["std"]
+
+[dependencies.atri_crypto]
+path = "../crypto"
+
+[dependencies.atri_executor]
+path = "../executor"
+
+[dev-dependencies.atri_executor]
+path = "../executor"
+features = ["blocking"]

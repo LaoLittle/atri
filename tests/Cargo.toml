@@ -1,0 +1,15 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dependencies.atri_executor]
+path = "../executor"
+
+[dependencies.tokio]
+version = "1"
+features = ["net", "io-std", "io-util","mio", "rt"]

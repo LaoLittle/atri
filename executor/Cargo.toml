@@ -1,0 +1,27 @@
+[package]
+name = "atri_executor"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[features]
+blocking = ["futures/executor"]
+thread-pool = ["futures/thread-pool"]
+
+[dependencies.futures]
+version = "0"
+optional = true
+default-features = false
+
+[dependencies.tokio]
+version = "1"
+optional = true
+features = ["rt"]
+default-features = false
+
+[dependencies.async-std]
+version = "1"
+optional = true
