@@ -12,6 +12,9 @@ dashmap = "5"
 version = "0"
 features = ["std"]
 
+[dependencies.futures-util]
+version = "0"
+
 [dependencies.atri_crypto]
 path = "../crypto"
 

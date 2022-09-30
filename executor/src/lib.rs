@@ -31,3 +31,25 @@ impl<E: Executor> Executor for std::sync::Arc<E> {
         (**self).spawn(fu)
     }
 }
+
+impl<E: Executor> Executor for &'static E {
+    fn spawn<F>(&self, fu: F)
+    where
+        F: Future + Send,
+        F: 'static,
+        F::Output: Send + 'static,
+    {
+        (**self).spawn(fu)
+    }
+}
+
+impl<E: Executor> Executor for Box<E> {
+    fn spawn<F>(&self, fu: F)
+    where
+        F: Future + Send,
+        F: 'static,
+        F::Output: Send + 'static,
+    {
+        (**self).spawn(fu)
+    }
+}
