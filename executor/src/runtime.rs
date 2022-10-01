@@ -12,7 +12,7 @@ pub mod tokio {
             F: 'static,
             F::Output: Send + 'static,
         {
-            self.spawn(fu);
+            (*self).spawn(fu);
         }
     }
 }
@@ -31,6 +31,25 @@ pub mod async_std {
             F::Output: Send + 'static,
         {
             async_std::task::spawn(fu);
+        }
+    }
+}
+
+#[cfg(feature = "smol")]
+pub mod smol {
+    use std::future::Future;
+
+    pub struct Global;
+
+    impl super::Executor for Global {
+        fn spawn<F>(&self, fu: F) where F: Future + Send, F: 'static, F::Output: Send + 'static {
+            smol::spawn(fu).detach();
+        }
+    }
+
+    impl super::Executor for smol::Executor<'_> {
+        fn spawn<F>(&self, fu: F) where F: Future + Send, F: 'static, F::Output: Send + 'static {
+            (*self).spawn(fu).detach();
         }
     }
 }
@@ -71,7 +90,7 @@ pub mod thread_pool {
             let fu = async {
                 fu.await;
             };
-            self.spawn_ok(fu);
+            (*self).spawn_ok(fu);
         }
     }
 }

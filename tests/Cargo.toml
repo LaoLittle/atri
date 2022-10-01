@@ -6,10 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+smol = "1"
 
 [dependencies.atri_executor]
 path = "../executor"
-
-[dependencies.tokio]
-version = "1"
-features = ["net", "io-std", "io-util","mio", "rt"]
+features = ["smol"]
