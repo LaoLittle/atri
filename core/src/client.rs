@@ -1,22 +1,22 @@
+use crate::crypto::packet::{Packet, PacketDetail};
 use crate::error::ClientError;
 use crate::event::ClientEvent;
-use crate::crypto::packet::{Packet, PacketDetail};
+use crate::network::connector::Connector;
 use atri_executor::Executor;
 use dashmap::DashMap;
+use futures::channel::mpsc::{UnboundedReceiver, UnboundedSender};
+use futures::channel::oneshot;
 use futures::StreamExt;
 use std::future::Future;
-use std::io::Read;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use crate::network::connector;
-use crate::network::connector::Connector;
 
 pub struct RequestClient {
     uin: u64,
     seq: AtomicU16,
-    seq_packet_receiver: DashMap<u16, futures::channel::oneshot::Sender<Packet>>,
+    seq_packet_receiver: DashMap<u16, oneshot::Sender<Packet>>,
 }
 
 impl RequestClient {
@@ -50,7 +50,7 @@ impl Default for RequestClient {
 
 pub struct Client {
     base: Arc<RequestClient>,
-    request_sender: futures::channel::mpsc::UnboundedSender<Packet>,
+    request_sender: UnboundedSender<Packet>,
 }
 
 type ClientResult<T> = Result<T, ClientError>;
@@ -72,8 +72,8 @@ pub struct ClientBuilder<F, E, C> {
     handler: F,
     base: RequestClient,
     executor: E,
-    packet_send_rx: futures::channel::mpsc::UnboundedReceiver<Packet>,
-    packet_send_tx: futures::channel::mpsc::UnboundedSender<Packet>,
+    packet_send_rx: UnboundedReceiver<Packet>,
+    packet_send_tx: UnboundedSender<Packet>,
     connector: C,
 }
 
@@ -158,7 +158,7 @@ impl<F, E, C> ClientBuilder<F, E, C> {
     }
 
     #[inline]
-    pub fn with_connector<T>(self, connector: T) -> ClientBuilder<F, E, T> {
+    pub fn with_connector<T: Connector>(self, connector: T) -> ClientBuilder<F, E, T> {
         let Self {
             handler,
             base,
@@ -188,8 +188,8 @@ where
     E: Executor,
     C: Connector,
 {
-    pub async fn login(self) {
-        
+    pub async fn login(&mut self) -> Result<&mut Self, ClientError> {
+        Ok(self)
     }
 
     pub fn run(self) -> Client {
@@ -205,17 +205,10 @@ where
                 out_pkt.extend_from_slice(&0x0Bu32.to_be_bytes());
 
                 match pkt.packet_detail {
-                    PacketDetail::Uin {
-                        seq
-                    } => {
-
-                    },
-                    PacketDetail::Login => {
-
-                    }
+                    PacketDetail::Uin { seq } => {}
+                    PacketDetail::Login => {}
                 }
 
-                out_pkt.extend_from_slice(&pkt.seq.to_be_bytes());
                 out_pkt.push(0);
             }
         });
