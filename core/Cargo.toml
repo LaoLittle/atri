@@ -10,30 +10,15 @@ tokio = ["atri_executor/tokio"]
 async-std = ["atri_executor/async-std"]
 blocking = ["atri_executor/blocking"]
 thread-pool = ["atri_executor/thread-pool"]
+net-tokio = ["tokio/net"]
+io-std = []
 
 [dependencies]
 dashmap = "5"
-futures-io = "0"
-futures-core = "0"
-futures-sink = "0"
+futures = "0"
 
-[dependencies.futures-channel]
-version = "0"
-features = ["std"]
-
-[dependencies.futures-util]
-version = "0"
-
-[target."cfg(features = \"tokio\")".dependencies.tokio]
+[dependencies.tokio]
 version = "1"
-features = ["io-util"]
-
-[dependencies.tokio-util]
-version = "0"
-features = ["codec"]
-
-[dependencies.atri_crypto]
-path = "../crypto"
 
 [dependencies.atri_executor]
 path = "../executor"

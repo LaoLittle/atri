@@ -8,6 +8,6 @@ edition = "2021"
 [dependencies]
 smol = "1"
 
-[dependencies.atri_executor]
-path = "../executor"
-features = ["smol"]
+[dependencies.atri_core]
+path = "../core"
+features = ["net-tokio", "blocking", "io-std"]

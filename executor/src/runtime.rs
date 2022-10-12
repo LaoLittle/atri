@@ -42,13 +42,23 @@ pub mod smol {
     pub struct Global;
 
     impl super::Executor for Global {
-        fn spawn<F>(&self, fu: F) where F: Future + Send, F: 'static, F::Output: Send + 'static {
+        fn spawn<F>(&self, fu: F)
+        where
+            F: Future + Send,
+            F: 'static,
+            F::Output: Send + 'static,
+        {
             smol::spawn(fu).detach();
         }
     }
 
     impl super::Executor for smol::Executor<'_> {
-        fn spawn<F>(&self, fu: F) where F: Future + Send, F: 'static, F::Output: Send + 'static {
+        fn spawn<F>(&self, fu: F)
+        where
+            F: Future + Send,
+            F: 'static,
+            F::Output: Send + 'static,
+        {
             (*self).spawn(fu).detach();
         }
     }

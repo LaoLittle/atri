@@ -1,37 +1,45 @@
 use crate::error::ClientError;
 use crate::event::ClientEvent;
+use crate::crypto::packet::{Packet, PacketDetail};
 use atri_executor::Executor;
 use dashmap::DashMap;
-use futures_util::StreamExt;
+use futures::StreamExt;
 use std::future::Future;
+use std::io::Read;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicU16, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use crate::network::connector;
+use crate::network::connector::Connector;
 
 pub struct RequestClient {
-    uin: AtomicU64,
+    uin: u64,
     seq: AtomicU16,
-    seq_packet_recv: DashMap<u16, futures_channel::oneshot::Sender<Vec<u8>>>,
+    seq_packet_receiver: DashMap<u16, futures::channel::oneshot::Sender<Packet>>,
 }
 
 impl RequestClient {
     pub fn new() -> Self {
         Self {
-            uin: AtomicU64::new(0),
+            uin: 0,
             seq: AtomicU16::new(0),
-            seq_packet_recv: DashMap::new(),
+            seq_packet_receiver: DashMap::new(),
         }
     }
 
     pub fn uin(&self) -> ClientResult<u64> {
-        match self.uin.load(Ordering::Relaxed) {
+        match self.uin {
             0 => Err(ClientError::NotInitialized),
             valid => Ok(valid),
         }
     }
 
-    pub async fn handle_packet(&self, packet: Vec<u8>) {}
+    pub fn next_seq(&self) -> u16 {
+        self.seq.fetch_add(1, Ordering::Relaxed)
+    }
+
+    pub async fn decode_packet(&self, payload: &[u8]) {}
 }
 
 impl Default for RequestClient {
@@ -40,73 +48,46 @@ impl Default for RequestClient {
     }
 }
 
-pub struct Client<F, E> {
-    handler: F,
-    request_client: Arc<RequestClient>,
-    executor: E,
-    packet_sender: futures_channel::mpsc::UnboundedSender<Vec<u8>>,
+pub struct Client {
+    base: Arc<RequestClient>,
+    request_sender: futures::channel::mpsc::UnboundedSender<Packet>,
 }
 
 type ClientResult<T> = Result<T, ClientError>;
 
-impl Client<(), ()> {
+impl Client {
     #[inline]
     pub fn builder() -> ClientBuilder<(), (), ()> {
         ClientBuilder::default()
     }
 }
 
-impl<F, E> Client<F, E> {
+impl Client {
     pub fn uin(&self) -> ClientResult<u64> {
-        self.request_client.uin()
-    }
-
-    pub fn handler(&self) -> &F {
-        &self.handler
-    }
-
-    pub fn executor(&self) -> &E {
-        &self.executor
+        self.base.uin()
     }
 }
 
-impl<F, Fu, E> Client<F, E>
-where
-    F: Fn(ClientEvent) -> Fu,
-    F: Send + 'static,
-    Fu: Future<Output = ()>,
-    Fu: Send + 'static,
-    E: Executor,
-{
-    pub fn request_client(&self) -> &RequestClient {
-        &self.request_client
-    }
-
-    pub async fn handle(&self, event: ClientEvent) {
-        (self.handler())(event).await;
-    }
-}
-
-pub struct ClientBuilder<F, E, S> {
+pub struct ClientBuilder<F, E, C> {
     handler: F,
-    request_client: RequestClient,
+    base: RequestClient,
     executor: E,
-    packet_send_rx: futures_channel::mpsc::UnboundedReceiver<Vec<u8>>,
-    packet_send_tx: futures_channel::mpsc::UnboundedSender<Vec<u8>>,
-    stream: S,
+    packet_send_rx: futures::channel::mpsc::UnboundedReceiver<Packet>,
+    packet_send_tx: futures::channel::mpsc::UnboundedSender<Packet>,
+    connector: C,
 }
 
 impl ClientBuilder<(), (), ()> {
     pub fn new() -> Self {
-        let (tx, rx) = futures_channel::mpsc::unbounded();
+        let (tx, rx) = futures::channel::mpsc::unbounded();
 
         Self {
             handler: (),
-            request_client: RequestClient::new(),
+            base: RequestClient::new(),
             executor: (),
             packet_send_rx: rx,
             packet_send_tx: tx,
-            stream: (),
+            connector: (),
         }
     }
 }
@@ -118,9 +99,9 @@ impl Default for ClientBuilder<(), (), ()> {
     }
 }
 
-impl<F, E, S> ClientBuilder<F, E, S> {
+impl<F, E, C> ClientBuilder<F, E, C> {
     #[inline]
-    pub fn with_handler<H, Fu>(self, handler: H) -> ClientBuilder<H, E, S>
+    pub fn with_handler<H, Fu>(self, handler: H) -> ClientBuilder<H, E, C>
     where
         H: Fn(ClientEvent) -> Fu,
         H: Send + 'static,
@@ -128,26 +109,26 @@ impl<F, E, S> ClientBuilder<F, E, S> {
         Fu: Send + 'static,
     {
         let Self {
-            request_client,
+            base,
             executor,
             packet_send_rx,
             packet_send_tx,
-            stream,
+            connector: stream,
             ..
         } = self;
 
         ClientBuilder {
             handler,
-            request_client,
+            base,
             executor,
             packet_send_rx,
             packet_send_tx,
-            stream,
+            connector: stream,
         }
     }
 
     #[inline]
-    pub fn with_default_handler(self) -> ClientBuilder<fn(ClientEvent) -> NopFuture, E, S> {
+    pub fn with_default_handler(self) -> ClientBuilder<fn(ClientEvent) -> NopFuture, E, C> {
         fn _handle(_: ClientEvent) -> NopFuture {
             NopFuture
         }
@@ -156,31 +137,31 @@ impl<F, E, S> ClientBuilder<F, E, S> {
     }
 
     #[inline]
-    pub fn with_executor<T: Executor>(self, executor: T) -> ClientBuilder<F, T, S> {
+    pub fn with_executor<T: Executor>(self, executor: T) -> ClientBuilder<F, T, C> {
         let Self {
             handler,
-            request_client,
+            base,
             packet_send_rx,
             packet_send_tx,
-            stream,
+            connector: stream,
             ..
         } = self;
 
         ClientBuilder {
             handler,
-            request_client,
+            base,
             executor,
             packet_send_rx,
             packet_send_tx,
-            stream,
+            connector: stream,
         }
     }
 
     #[inline]
-    pub fn with_stream<T>(self, stream: T) -> ClientBuilder<F, E, T> {
+    pub fn with_connector<T>(self, connector: T) -> ClientBuilder<F, E, T> {
         let Self {
             handler,
-            request_client,
+            base,
             executor,
             packet_send_rx,
             packet_send_tx,
@@ -189,43 +170,64 @@ impl<F, E, S> ClientBuilder<F, E, S> {
 
         ClientBuilder {
             handler,
-            request_client,
+            base,
             executor,
             packet_send_rx,
             packet_send_tx,
-            stream,
+            connector,
         }
     }
 }
 
-impl<F, Fu, E, S> ClientBuilder<F, E, S>
+impl<F, Fu, E, C> ClientBuilder<F, E, C>
 where
     F: Fn(ClientEvent) -> Fu,
     F: Send + 'static,
     Fu: Future<Output = ()>,
     Fu: Send + 'static,
     E: Executor,
-    S: futures_io::AsyncRead + futures_io::AsyncWrite,
+    C: Connector,
 {
-     pub fn run(self) -> Client<F, E> {
-        let client = Arc::new(self.request_client);
+    pub async fn login(self) {
+        
+    }
 
-        let pkt_install = client.clone();
+    pub fn run(self) -> Client {
+        let client = Arc::new(self.base);
+
+        let install = client.clone();
         self.executor.spawn(async move {
             let mut pkt_rx = self.packet_send_rx;
             while let Some(pkt) = pkt_rx.next().await {
-                pkt_install.handle_packet(pkt).await;
+                let len = pkt.command.len() + 20;
+                let mut out_pkt = Vec::<u8>::with_capacity(len);
+                out_pkt.extend_from_slice(&len.to_be_bytes());
+                out_pkt.extend_from_slice(&0x0Bu32.to_be_bytes());
+
+                match pkt.packet_detail {
+                    PacketDetail::Uin {
+                        seq
+                    } => {
+
+                    },
+                    PacketDetail::Login => {
+
+                    }
+                }
+
+                out_pkt.extend_from_slice(&pkt.seq.to_be_bytes());
+                out_pkt.push(0);
             }
         });
 
         Client {
-            handler: self.handler,
-            request_client: client,
-            executor: self.executor,
-            packet_sender: self.packet_send_tx,
+            base: client,
+            request_sender: self.packet_send_tx,
         }
     }
 }
+
+struct NeedLogin;
 
 pub struct NopFuture;
 

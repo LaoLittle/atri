@@ -4,6 +4,8 @@ use std::fmt::{Debug, Display, Formatter};
 #[derive(Debug)]
 pub enum ClientError {
     NotInitialized,
+    TokenExpired,
+
 }
 
 impl Display for ClientError {
