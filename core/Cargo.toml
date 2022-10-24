@@ -11,6 +11,7 @@ async-std = ["atri_executor/async-std"]
 blocking = ["atri_executor/blocking"]
 thread-pool = ["atri_executor/thread-pool"]
 net-tokio = ["tokio/net"]
+net-async-std = ["async-std/default"]
 net-std = []
 
 [dependencies]
@@ -20,6 +21,12 @@ futures = "0"
 [dependencies.tokio]
 version = "1"
 optional = true
+default-features = false
+
+[dependencies.async-std]
+version = "1"
+optional = true
+default-features = false
 
 [dependencies.smol]
 version = "1"

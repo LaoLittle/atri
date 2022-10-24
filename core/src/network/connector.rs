@@ -35,7 +35,7 @@ mod net_tokio {
 }
 
 #[cfg(feature = "net-std")]
-mod io_std {
+mod net_std {
     use crate::network::connector::Connector;
     use std::io;
     use std::io::{Read, Write};
@@ -52,8 +52,29 @@ mod io_std {
     }
 }
 
+#[cfg(feature = "net-async-std")]
+mod net_async_std {
+    use crate::network::connector::Connector;
+    use async_std::io::{Read, Write};
+    use std::task::{Context, Poll};
+
+    impl Connector for async_std::net::TcpStream {
+        fn poll_recv(
+            &mut self,
+            cx: &mut Context<'_>,
+            buf: &mut [u8],
+        ) -> Poll<std::io::Result<usize>> {
+            self.poll_read(cx, buf)
+        }
+
+        fn poll_send(&mut self, cx: &mut Context<'_>, buf: &[u8]) -> Poll<std::io::Result<usize>> {
+            self.poll_write(cx, buf)
+        }
+    }
+}
+
 #[cfg(feature = "smol")]
-mod smol {
+mod net_smol {
     use crate::network::connector::Connector;
     use smol::io::{AsyncRead, AsyncWrite};
     use std::pin::Pin;

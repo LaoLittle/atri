@@ -14,12 +14,13 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 pub struct RequestClient {
-    uin: u64,
+    uin: u32,
     seq: AtomicU16,
     seq_packet_receiver: DashMap<u16, oneshot::Sender<Packet>>,
 }
 
 impl RequestClient {
+    #[inline]
     pub fn new() -> Self {
         Self {
             uin: 0,
@@ -28,13 +29,7 @@ impl RequestClient {
         }
     }
 
-    pub fn uin(&self) -> ClientResult<u64> {
-        match self.uin {
-            0 => Err(ClientError::NotInitialized),
-            valid => Ok(valid),
-        }
-    }
-
+    #[inline]
     pub fn next_seq(&self) -> u16 {
         self.seq.fetch_add(1, Ordering::Relaxed)
     }
@@ -43,6 +38,7 @@ impl RequestClient {
 }
 
 impl Default for RequestClient {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -63,8 +59,9 @@ impl Client {
 }
 
 impl Client {
-    pub fn uin(&self) -> ClientResult<u64> {
-        self.base.uin()
+    #[inline]
+    pub fn uin(&self) -> u32 {
+        self.base.uin
     }
 }
 
@@ -78,6 +75,7 @@ pub struct ClientBuilder<F, E, C> {
 }
 
 impl ClientBuilder<(), (), ()> {
+    #[inline]
     pub fn new() -> Self {
         let (tx, rx) = futures::channel::mpsc::unbounded();
 
@@ -113,7 +111,7 @@ impl<F, E, C> ClientBuilder<F, E, C> {
             executor,
             packet_send_rx,
             packet_send_tx,
-            connector: stream,
+            connector,
             ..
         } = self;
 
@@ -123,7 +121,7 @@ impl<F, E, C> ClientBuilder<F, E, C> {
             executor,
             packet_send_rx,
             packet_send_tx,
-            connector: stream,
+            connector,
         }
     }
 
@@ -143,7 +141,7 @@ impl<F, E, C> ClientBuilder<F, E, C> {
             base,
             packet_send_rx,
             packet_send_tx,
-            connector: stream,
+            connector,
             ..
         } = self;
 
@@ -153,7 +151,7 @@ impl<F, E, C> ClientBuilder<F, E, C> {
             executor,
             packet_send_rx,
             packet_send_tx,
-            connector: stream,
+            connector,
         }
     }
 
@@ -189,6 +187,8 @@ where
     C: Connector,
 {
     pub async fn login(&mut self) -> Result<&mut Self, ClientError> {
+        // do login here
+
         Ok(self)
     }
 
@@ -205,7 +205,7 @@ where
                 out_pkt.extend_from_slice(&0x0Bu32.to_be_bytes());
 
                 match pkt.packet_detail {
-                    PacketDetail::Uin { seq } => {}
+                    PacketDetail::Uin => {}
                     PacketDetail::Login => {}
                 }
 
@@ -220,13 +220,12 @@ where
     }
 }
 
-struct NeedLogin;
-
 pub struct NopFuture;
 
 impl Future for NopFuture {
     type Output = ();
 
+    #[inline]
     fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
         Poll::Ready(())
     }
