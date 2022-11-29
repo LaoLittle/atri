@@ -1,11 +1,10 @@
-use super::Executor;
-
 #[cfg(feature = "tokio")]
 pub mod tokio {
+    use crate::Executor;
     use std::future::Future;
     pub use tokio::runtime::Runtime;
 
-    impl super::Executor for Runtime {
+    impl Executor for Runtime {
         fn spawn<F>(&self, fu: F)
         where
             F: Future + Send,
@@ -19,11 +18,12 @@ pub mod tokio {
 
 #[cfg(feature = "async-std")]
 pub mod async_std {
+    use crate::Executor;
     use std::future::Future;
 
     pub struct Runtime;
 
-    impl super::Executor for Runtime {
+    impl Executor for Runtime {
         fn spawn<F>(&self, fu: F)
         where
             F: Future + Send,
@@ -37,11 +37,12 @@ pub mod async_std {
 
 #[cfg(feature = "smol")]
 pub mod smol {
+    use crate::Executor;
     use std::future::Future;
 
-    pub struct Global;
+    pub struct Runtime;
 
-    impl super::Executor for Global {
+    impl Executor for Runtime {
         fn spawn<F>(&self, fu: F)
         where
             F: Future + Send,
@@ -52,7 +53,7 @@ pub mod smol {
         }
     }
 
-    impl super::Executor for smol::Executor<'_> {
+    impl Executor for smol::Executor<'_> {
         fn spawn<F>(&self, fu: F)
         where
             F: Future + Send,
@@ -66,12 +67,13 @@ pub mod smol {
 
 #[cfg(feature = "blocking")]
 pub mod blocking {
+    use crate::Executor;
     use std::future::Future;
     use std::thread;
 
     pub struct Runtime;
 
-    impl super::Executor for Runtime {
+    impl Executor for Runtime {
         fn spawn<F>(&self, fu: F)
         where
             F: Future + Send,
@@ -87,10 +89,11 @@ pub mod blocking {
 
 #[cfg(feature = "thread-pool")]
 pub mod thread_pool {
+    use crate::Executor;
     use futures::executor::ThreadPool;
     use std::future::Future;
 
-    impl super::Executor for ThreadPool {
+    impl Executor for ThreadPool {
         fn spawn<F>(&self, fu: F)
         where
             F: Future + Send,

@@ -1,6 +1,5 @@
-pub mod packet;
+pub mod ecdh;
 pub mod tea;
-pub mod tlv;
 
 pub struct Transport {
     s_key: [u8; 16],

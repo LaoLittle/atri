@@ -2,7 +2,7 @@
 mod tests {
     use atri_core::atri_executor::runtime::blocking::Runtime;
     use atri_core::atri_executor::Executor;
-    use atri_core::network::connector::send_all;
+    use atri_core::net::connector::send_all;
     use std::io::Read;
     use std::net::TcpListener;
 

@@ -13,7 +13,7 @@ where
 
 #[cfg(feature = "net-tokio")]
 mod net_tokio {
-    use crate::network::connector::Connector;
+    use crate::net::connector::Connector;
     use std::io;
     use std::pin::Pin;
     use std::task::{ready, Context, Poll};
@@ -36,7 +36,7 @@ mod net_tokio {
 
 #[cfg(feature = "net-std")]
 mod net_std {
-    use crate::network::connector::Connector;
+    use crate::net::connector::Connector;
     use std::io;
     use std::io::{Read, Write};
     use std::task::{Context, Poll};
@@ -54,7 +54,7 @@ mod net_std {
 
 #[cfg(feature = "net-async-std")]
 mod net_async_std {
-    use crate::network::connector::Connector;
+    use crate::net::connector::Connector;
     use async_std::io::{Read, Write};
     use std::task::{Context, Poll};
 
@@ -75,7 +75,7 @@ mod net_async_std {
 
 #[cfg(feature = "smol")]
 mod net_smol {
-    use crate::network::connector::Connector;
+    use crate::net::connector::Connector;
     use smol::io::{AsyncRead, AsyncWrite};
     use std::pin::Pin;
     use std::task::{Context, Poll};

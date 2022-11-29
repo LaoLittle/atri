@@ -1,7 +1,7 @@
-use crate::crypto::packet::{Packet, PacketDetail};
+use crate::data::packet::{Packet, PacketDetail};
 use crate::error::ClientError;
 use crate::event::ClientEvent;
-use crate::network::connector::Connector;
+use crate::net::connector::Connector;
 use atri_executor::Executor;
 use dashmap::DashMap;
 use futures::channel::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -14,22 +14,20 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 pub struct RequestClient {
-    uin: u32,
+    uin: u64,
     seq: AtomicU16,
-    seq_packet_receiver: DashMap<u16, oneshot::Sender<Packet>>,
+    seq_packet_sender: DashMap<u16, oneshot::Sender<Packet>>,
 }
 
 impl RequestClient {
-    #[inline]
     pub fn new() -> Self {
         Self {
             uin: 0,
             seq: AtomicU16::new(0),
-            seq_packet_receiver: DashMap::new(),
+            seq_packet_sender: DashMap::new(),
         }
     }
 
-    #[inline]
     pub fn next_seq(&self) -> u16 {
         self.seq.fetch_add(1, Ordering::Relaxed)
     }
@@ -60,7 +58,7 @@ impl Client {
 
 impl Client {
     #[inline]
-    pub fn uin(&self) -> u32 {
+    pub fn uin(&self) -> u64 {
         self.base.uin
     }
 }
@@ -75,7 +73,6 @@ pub struct ClientBuilder<F, E, C> {
 }
 
 impl ClientBuilder<(), (), ()> {
-    #[inline]
     pub fn new() -> Self {
         let (tx, rx) = futures::channel::mpsc::unbounded();
 
