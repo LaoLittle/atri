@@ -1,4 +1,4 @@
-pub struct EcdhCrypto {}
+pub struct Ecdh {}
 
 static PUBLIC_KEY: [u8; 65] = [
     4, 235, 202, 148, 215, 51, 227, 153, 178, 219, 150, 234, 205, 211, 246, 154, 139, 176, 247, 66,

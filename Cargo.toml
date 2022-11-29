@@ -36,9 +36,15 @@ optional = true
 version = "0"
 
 # crypto
+[dependencies.digest]
+version = "0"
+
 [dependencies.p256]
 version = "0.11"
 features = ["ecdh"]
+
+[dependencies.md-5]
+version = "0"
 
 # end crypto
 

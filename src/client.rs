@@ -44,6 +44,7 @@ impl Default for RequestClient {
 
 pub struct Client {
     base: Arc<RequestClient>,
+    stop_sig: oneshot::Sender<()>,
     request_sender: UnboundedSender<Packet>,
 }
 
@@ -190,6 +191,8 @@ where
     }
 
     pub fn run(self) -> Client {
+        let (tx, mut rx) = oneshot::channel();
+
         let client = Arc::new(self.base);
 
         let install = client.clone();
@@ -207,11 +210,19 @@ where
                 }
 
                 out_pkt.push(0);
+
+                match rx.try_recv() {
+                    Ok(Some(())) | Err(_) => {
+                        break;
+                    }
+                    Ok(None) => {}
+                }
             }
         });
 
         Client {
             base: client,
+            stop_sig: tx,
             request_sender: self.packet_send_tx,
         }
     }
