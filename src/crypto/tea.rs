@@ -137,7 +137,7 @@ fn _encrypt(mut x: u32, mut y: u32, k0: u32, k1: u32, k2: u32, k3: u32) -> (u32,
         y = y.wrapping_add(b);
     }
 
-    return (x, y);
+    (x, y)
 }
 
 fn _decrypt(mut x: u32, mut y: u32, k0: u32, k1: u32, k2: u32, k3: u32) -> (u32, u32) {
@@ -149,7 +149,7 @@ fn _decrypt(mut x: u32, mut y: u32, k0: u32, k1: u32, k2: u32, k3: u32) -> (u32,
         x = x.wrapping_sub(b);
     }
 
-    return (x, y);
+    (x, y)
 }
 
 #[derive(Debug)]

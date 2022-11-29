@@ -1,6 +1,6 @@
 #[cfg(feature = "tokio")]
 pub mod tokio {
-    use crate::Executor;
+    use crate::executor::Executor;
     use std::future::Future;
     pub use tokio::runtime::Runtime;
 
@@ -18,7 +18,7 @@ pub mod tokio {
 
 #[cfg(feature = "async-std")]
 pub mod async_std {
-    use crate::Executor;
+    use crate::executor::Executor;
     use std::future::Future;
 
     pub struct Runtime;
@@ -37,7 +37,7 @@ pub mod async_std {
 
 #[cfg(feature = "smol")]
 pub mod smol {
-    use crate::Executor;
+    use crate::executor::Executor;
     use std::future::Future;
 
     pub struct Runtime;
@@ -67,7 +67,7 @@ pub mod smol {
 
 #[cfg(feature = "blocking")]
 pub mod blocking {
-    use crate::Executor;
+    use crate::executor::Executor;
     use std::future::Future;
     use std::thread;
 
@@ -89,7 +89,7 @@ pub mod blocking {
 
 #[cfg(feature = "thread-pool")]
 pub mod thread_pool {
-    use crate::Executor;
+    use crate::executor::Executor;
     use futures::executor::ThreadPool;
     use std::future::Future;
 

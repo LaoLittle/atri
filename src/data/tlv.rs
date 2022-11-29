@@ -12,6 +12,7 @@ impl Writer {
         Self::with_capacity(0)
     }
 
+    #[inline]
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             buf: BytesMut::with_capacity(cap),
@@ -29,15 +30,25 @@ impl Writer {
     }
 }
 
+impl Default for Writer {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 unsafe impl BufMut for Writer {
+    #[inline]
     fn remaining_mut(&self) -> usize {
         self.buf.remaining_mut()
     }
 
+    #[inline]
     unsafe fn advance_mut(&mut self, cnt: usize) {
         self.buf.advance_mut(cnt)
     }
 
+    #[inline]
     fn chunk_mut(&mut self) -> &mut UninitSlice {
         self.buf.chunk_mut()
     }

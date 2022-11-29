@@ -17,10 +17,9 @@ pub struct DeviceInfo {
     wifi_ssid: String,
     imei: String,
     android_id: String,
-    apn: APN,
+    apn: Apn,
     version: DeviceVersion,
     imsi: [u8; 16],
-    guid: Vec<u8>,
 }
 
 pub enum OSType {
@@ -28,7 +27,7 @@ pub enum OSType {
     Unknown,
 }
 
-pub enum APN {
+pub enum Apn {
     WiFi,
 }
 

@@ -1,8 +1,8 @@
 use crate::data::packet::{Packet, PacketDetail};
 use crate::error::ClientError;
 use crate::event::ClientEvent;
+use crate::executor::Executor;
 use crate::net::connector::Connector;
-use atri_executor::Executor;
 use dashmap::DashMap;
 use futures::channel::mpsc::{UnboundedReceiver, UnboundedSender};
 use futures::channel::oneshot;
